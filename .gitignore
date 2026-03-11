@@ -1,0 +1,7 @@
+# Runtime data files
+repolist.json
+repo_names.json
+repos.json
+
+# Secrets / local configs
+config.sh
