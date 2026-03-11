@@ -2,6 +2,9 @@
 
 import sys
 import json
+import os
+
+FORGEUSER= os.environ["FORGEUSER"]
 
 if len(sys.argv) != 3:
     print("usage: extract_repo_names.py <input.json> <output.json>", file=sys.stderr)
@@ -19,7 +22,12 @@ if isinstance(data, dict):
 repo_names = []
 for repo in data:
     if isinstance(repo, dict) and "html_url" in repo:
+
+        if FORGEUSER.lower() not in repo["html_url"].lower():
+            continue
         repo_names.append(repo["html_url"])
+        print(repo["html_url"])
+
 
 with open(output_file, "w", encoding="utf-8") as f:
     json.dump(repo_names, f, indent=2)

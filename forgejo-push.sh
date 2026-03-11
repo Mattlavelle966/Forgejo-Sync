@@ -18,7 +18,7 @@ failed_repos=()
 navToSyncDir(){
   echo "Navigating to Sync dir"
   if cd "$CURRENT_DIR/Sync/"; then
-    echo "Nav to Sync Dir has Successfull"
+    echo "Nav to Sync Dir has Succeded"
     return 0
   else
     echo "Nav to Sync Dir has Failed"
