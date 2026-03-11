@@ -106,8 +106,8 @@ for repo in "${repositories[@]}"; do
   dir=$(pwd)
   echo "$dir"
   echo "Attempting Sync $repo issues with $CONSUMER_DESTINATION_DOMAIN"
-  if sync_issues "$repo" "$consumer_repo_url"; then
-    echo "issue Sync Successfull"
+  if python3 "$CURRENT_DIR/pyTools/sync_issues.py" "$repo" "$consumer_repo_url"; then
+    echo "issue Sync executed Successfully"
   else 
     echo "issue Sync Failed"
   fi
