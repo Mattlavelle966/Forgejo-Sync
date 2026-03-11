@@ -140,7 +140,6 @@ def sync_issues(producer_repo_url, consumer_repo_url):
             )
             print(f"closed issue #{issue_number}")
 
-        print("")
 
 
 # call like this:

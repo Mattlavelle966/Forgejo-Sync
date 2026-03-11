@@ -5,8 +5,23 @@
 
 
 source ./config.sh
-source ./shTools/sync_issues.sh
-#source ./shTools/sync_PRs.sh
+
+echo "Syncing $FORGEUSER remote $CONSUMER_DESTINATION_DOMAIN with $PRODUCER_DESTINATION_DOMAIN"
+
+
+
+echo "Fetching $FORGEUSER repo list for Sync"
+
+if ./shTools/fetch_repos.sh; then
+  echo "Fetch executed"
+else
+  echo "Fetch failed"
+  exit 1
+fi
+
+echo "Fetch Complete"
+echo "-----------------------------------------"
+
 
 CURRENT_DIR=$(pwd)
 
@@ -125,19 +140,21 @@ for repo in "${repositories[@]}"; do
   echo "------------------------------------------------"
   navToSyncDir
 
-  repo_path="${CURRENT_DIR}/Sync/${repo_name}"
-  if [[ -d "$repo_path" && "$repo_path" == "$CURRENT_DIR/Sync/"* ]]; then
-    rm -rf "$repo_path"
-  else
-    echo "Refusing to delete unexpected path: $repo_path"
-  fi
- 
+   
 done
 echo "--------------------------------------------------"
 echo "Failed Repos:"
 for repo in "${failed_repos[@]}"; do
   echo "Repositorie Failed to Sync:{${repo}}"
 done
+
+repo_path="${CURRENT_DIR}/Sync/"
+if [[ -d "$repo_path" && "$repo_path" == "$CURRENT_DIR/Sync/"* ]]; then
+  rm -rf "$repo_path"
+else
+  echo "Refusing to delete unexpected path: $repo_path"
+fi
+
 
 
 
