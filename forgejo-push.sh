@@ -47,7 +47,7 @@ fi
 echo "--------------------------------------------------"
 #loading in repo list
 echo "starting Sync with $FORGEUSER"
-mapfile -t repositories < <(python3 "$CURRENT_DIR/pyTools/json_array_to_lines.py" "$CURRENT_DIR/repolist.json")
+mapfile -t repositories < <(python3 "$CURRENT_DIR/pyTools/json_array_to_lines.py" "$CURRENT_DIR/repo_names.json")
 
 for repo in "${repositories[@]}"; do
   echo "$repo"
