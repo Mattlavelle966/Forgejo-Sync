@@ -109,9 +109,9 @@ for repo in "${repositories[@]}"; do
   
   remote_url="https://${FORGEUSER}:${CONSUMER_DESTINATION_TOKEN}@${CONSUMER_DESTINATION_DOMAIN}/${FORGEUSER}/${repo_name}.git"
   if git push --mirror "$remote_url"; then
-    echo "Pushing $repo to $remote_url has succeeded"
+    echo "Pushing $repo to $CONSUMER_DESTINATION_DOMAIN has succeeded"
   else
-    echo "Pushing $repo to $remote_url has Failed"
+    echo "Pushing $repo to $CONSUMER_DESTINATION_DOMAIN has Failed"
 
     failed_repos+=("$repo_name")
     continue  

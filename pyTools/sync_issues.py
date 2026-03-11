@@ -99,24 +99,28 @@ def sync_issues(producer_repo_url, consumer_repo_url):
     
     #print(forge_numbers)
     # GitHub returns PRs in /issues too, so skip those.
+    print("Begining issue scan")
     i = 0
     while i < len(github_issues):
 
         issue = github_issues[i]
+
 
         i += 1
 
         if "pull_request" in issue:
             continue
         
-
         #should now skip pushing currently existing tickets
         currentIssue = issue["number"]
+        print(f"Scanning issue Sync Status:{currentIssue}")
         if currentIssue in forge_numbers:
             print(f"Issue#{currentIssue} already exists in the consumer repo");
             print("skipping....")
             continue
-        
+        print(f"Current Issue found")
+
+
         issue_json = build_issue_payload(issue)
         issue_state = issue_json.get("state", "open")
                 
