@@ -38,6 +38,86 @@ def http_request(url, method="GET", headers=None, body=None):
         raise
 
 
+#called on each ticket         
+def sync_issue_comments(issue_number, producer_repo_url, consumer_repo_url):
+    github_path = producer_repo_url.removeprefix("https://" + PRODUCER_DESTINATION_DOMAIN + "/")
+    github_path = github_path.rstrip("/")
+
+    forgejo_base = "https://" + CONSUMER_DESTINATION_DOMAIN
+    forgejo_path = consumer_repo_url.removeprefix(forgejo_base + "/")
+    forgejo_path = forgejo_path.rstrip("/")
+
+    github_comments_url = f"https://api.github.com/repos/{github_path}/issues/{issue_number}/comments"
+    forgejo_comments_url = f"{forgejo_base}/api/v1/repos/{forgejo_path}/issues/{issue_number}/comments"
+
+    github_headers = {
+        "Authorization": f"Bearer {PRODUCER_DESTINATION_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    forgejo_get_headers = {
+        "Authorization": f"token {CONSUMER_DESTINATION_TOKEN}",
+        "Accept": "application/json"
+    }
+
+    forgejo_post_headers = {
+        "Authorization": f"token {CONSUMER_DESTINATION_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    github_comments = http_request(
+        github_comments_url,
+        method="GET",
+        headers=github_headers
+    )
+
+    forgejo_comments = http_request(
+        forgejo_comments_url,
+        method="GET",
+        headers=forgejo_get_headers
+    )
+
+    existing_comment_bodies = set()
+
+    i = 0
+    while i < len(forgejo_comments):
+        comment = forgejo_comments[i]
+        i += 1
+
+        body = comment.get("body", "")
+        existing_comment_bodies.add(body)
+
+    i = 0
+    while i < len(github_comments):
+        comment = github_comments[i]
+        i += 1
+
+        comment_body = comment.get("body", "")
+        comment_user = comment.get("user", {}).get("login", "unknown")
+        comment_created_at = comment.get("created_at", "")
+
+        import_body = (
+            "Original author: " + comment_user + "\n"
+            + "Original created at: " + comment_created_at + "\n\n"
+            + comment_body
+        )
+
+        if import_body in existing_comment_bodies:
+            print(f"comment already exists on issue #{issue_number}, skipping")
+            continue
+
+        http_request(
+            forgejo_comments_url,
+            method="POST",
+            headers=forgejo_post_headers,
+            body={"body": import_body}
+        )
+
+        print(f"synced comment for issue #{issue_number} from {comment_user}")
+
+
+
+
 def build_issue_payload(issue):
     payload = {
         "title": issue.get("title", ""),
@@ -94,7 +174,8 @@ def sync_issues(producer_repo_url, consumer_repo_url):
     }
 
     github_issues = http_request(github_issues_url, method="GET", headers=github_headers)
-    
+    github_issues.reverse()
+
     forge_numbers = load_issue_numbers_list(forgejo_issues_url_get,forgejo_get_headers)
     
     #print(forge_numbers)
@@ -116,10 +197,11 @@ def sync_issues(producer_repo_url, consumer_repo_url):
         print(f"Scanning issue Sync Status:{currentIssue}")
         if currentIssue in forge_numbers:
             print(f"Issue#{currentIssue} already exists in the consumer repo");
+            print("Syncing issue comments")
+            sync_issue_comments(currentIssue,producer_repo_url,consumer_repo_url)
             print("skipping....")
             continue
         print(f"Current Issue found")
-
 
         issue_json = build_issue_payload(issue)
         issue_state = issue_json.get("state", "open")
@@ -133,7 +215,11 @@ def sync_issues(producer_repo_url, consumer_repo_url):
 
         issue_number = create_response.get("number")
 
+        print("Syncing issue comments")
+        sync_issue_comments(issue_number,producer_repo_url,consumer_repo_url)
         print(f"created issue #{issue_number} with state={issue_state}")
+        
+
 
         if issue_state == "closed":
             http_request(
@@ -143,7 +229,6 @@ def sync_issues(producer_repo_url, consumer_repo_url):
                 body={"state": "closed"}
             )
             print(f"closed issue #{issue_number}")
-
 
 
 # call like this:
