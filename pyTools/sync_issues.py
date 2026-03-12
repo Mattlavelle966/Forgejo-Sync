@@ -39,7 +39,7 @@ def http_request(url, method="GET", headers=None, body=None):
 
 
 #called on each ticket         
-def sync_issue_comments(issue_number, producer_repo_url, consumer_repo_url):
+def sync_issue_comments(issue_number, producer_repo_url, consumer_repo_url, type):
     github_path = producer_repo_url.removeprefix("https://" + PRODUCER_DESTINATION_DOMAIN + "/")
     github_path = github_path.rstrip("/")
 
@@ -47,8 +47,8 @@ def sync_issue_comments(issue_number, producer_repo_url, consumer_repo_url):
     forgejo_path = consumer_repo_url.removeprefix(forgejo_base + "/")
     forgejo_path = forgejo_path.rstrip("/")
 
-    github_comments_url = f"https://api.github.com/repos/{github_path}/issues/{issue_number}/comments"
-    forgejo_comments_url = f"{forgejo_base}/api/v1/repos/{forgejo_path}/issues/{issue_number}/comments"
+    github_comments_url = f"https://api.github.com/repos/{github_path}/{type}/{issue_number}/comments"
+    forgejo_comments_url = f"{forgejo_base}/api/v1/repos/{forgejo_path}/{type}/{issue_number}/comments"
 
     github_headers = {
         "Authorization": f"Bearer {PRODUCER_DESTINATION_TOKEN}",
@@ -198,7 +198,7 @@ def sync_issues(producer_repo_url, consumer_repo_url):
         if currentIssue in forge_numbers:
             print(f"Issue#{currentIssue} already exists in the consumer repo");
             print("Syncing issue comments")
-            sync_issue_comments(currentIssue,producer_repo_url,consumer_repo_url)
+            sync_issue_comments(currentIssue,producer_repo_url,consumer_repo_url, "issues")
             print("skipping....")
             continue
         print(f"Current Issue found")
@@ -216,7 +216,7 @@ def sync_issues(producer_repo_url, consumer_repo_url):
         issue_number = create_response.get("number")
 
         print("Syncing issue comments")
-        sync_issue_comments(issue_number,producer_repo_url,consumer_repo_url)
+        sync_issue_comments(issue_number,producer_repo_url,consumer_repo_url, "issues")
         print(f"created issue #{issue_number} with state={issue_state}")
         
 

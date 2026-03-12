@@ -20,7 +20,7 @@ else
 fi
 
 echo "Fetch Complete"
-echo "-----------------------------------------"
+echo -e "\e[35m----------------------------------------\e[0m"
 
 
 CURRENT_DIR=$(pwd)
@@ -58,8 +58,8 @@ else
     exit 1
   fi
 fi
-
-echo "--------------------------------------------------"
+ 
+echo -e "\e[35m----------------------------------------\e[0m"
 #loading in repo list
 echo "starting Sync with $FORGEUSER"
 mapfile -t repositories < <(python3 "$CURRENT_DIR/pyTools/json_array_to_lines.py" "$CURRENT_DIR/repo_names.json")
@@ -68,8 +68,8 @@ for repo in "${repositories[@]}"; do
   echo "$repo"
 done
 echo "repo list loaded"
-
-echo "--------------------------------------------------"
+ 
+echo -e "\e[35m----------------------------------------\e[0m"
 
 #main clone loop
 for repo in "${repositories[@]}"; do
@@ -77,8 +77,8 @@ for repo in "${repositories[@]}"; do
 
 
   repo_name="${repo##*/}"
-
-  echo "---------------------------------------------------"
+ 
+ echo -e "\e[35m----------------------------------------\e[0m"
   echo "Attempting clone of $repo"
   clone_url="https://x-access-token:${PRODUCER_DESTINATION_TOKEN}@${PRODUCER_DESTINATION_DOMAIN}/${FORGEUSER}/${repo_name}.git"
   if git clone "$clone_url"; then
@@ -92,9 +92,9 @@ for repo in "${repositories[@]}"; do
 
   echo "Successfull clone of $repo"
   echo "Navigating to repo"
-  
-  echo "--------------------------------------------------"
-  if cd "$repo_name"; then
+   
+ echo -e "\e[35m----------------------------------------\e[0m"
+  if cd -- "$repo_name"; then
     echo "Nav to repo $repo_name succeeded"
   else
     echo "Nav to repo failed for $repo_name"
@@ -102,20 +102,23 @@ for repo in "${repositories[@]}"; do
     continue  
   fi
 
-
-  echo "-------------------------------------------------"
+ 
+ echo -e "\e[35m----------------------------------------\e[0m"
   echo "Pushing current branch: $(git branch --show-current)"
   echo "Attempting a push of $repo"
   
   remote_url="https://${FORGEUSER}:${CONSUMER_DESTINATION_TOKEN}@${CONSUMER_DESTINATION_DOMAIN}/${FORGEUSER}/${repo_name}.git"
-  if git push --mirror "$remote_url"; then
-    echo "Pushing $repo to $CONSUMER_DESTINATION_DOMAIN has succeeded"
-  else
-    echo "Pushing $repo to $CONSUMER_DESTINATION_DOMAIN has Failed"
+  #send every branch so prs can import
+  while IFS= read -r branch; do
+    #skipping origin
+    [[ "$branch" == "origin" ]] && continue
+    #skipping origin/HEAD
+    [[ "$branch" == "origin/HEAD" ]] && continue
 
-    failed_repos+=("$repo_name")
-    continue  
-  fi
+    short_branch="${branch#origin/}"
+    git push "$remote_url" -- "refs/remotes/${branch}:refs/heads/${short_branch}"
+  done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin)
+
   
   consumer_repo_url="https://${CONSUMER_DESTINATION_DOMAIN}/${FORGEUSER}/${repo_name}"
   dir=$(pwd)
@@ -127,22 +130,22 @@ for repo in "${repositories[@]}"; do
     echo "issue Sync Failed"
   fi
 
- # for a later release  
- # echo "Attempting to Sync $repo pull requests with $CONSUMER_DESTINATION_DOMAIN" 
- # if sync_pulls "$repo" "$consumer_repo_url"; then
- #   echo "pull requests Sync Successfull"
- # else 
- #   echo "pull requests Sync Failed"
- # fi
+
+  echo "Attempting to Sync $repo pull requests with $CONSUMER_DESTINATION_DOMAIN" 
+  if python3 "$CURRENT_DIR/pyTools/sync_pulls.py" "$repo" "$consumer_repo_url"; then
+    echo "pull requests Sync executed Successfully"
+  else 
+    echo "pull requests Sync Failed"
+  fi
 
   
-
-  echo "------------------------------------------------"
+ 
+ echo -e "\e[35m----------------------------------------\e[0m"
   navToSyncDir
 
    
 done
-echo "--------------------------------------------------"
+echo -e "\e[35m----------------------------------------\e[0m"
 echo "Failed Repos:"
 for repo in "${failed_repos[@]}"; do
   echo "Repositorie Failed to Sync:{${repo}}"
