@@ -6,11 +6,11 @@
 
 source ./config.sh
 
-echo "Syncing $FORGEUSER remote $CONSUMER_DESTINATION_DOMAIN with $PRODUCER_DESTINATION_DOMAIN"
+echo "Syncing $CONSUMER_FORGEUSER remote $CONSUMER_DESTINATION_DOMAIN with $PRODUCER_DESTINATION_DOMAIN"
 
 
 
-echo "Fetching $FORGEUSER repo list for Sync"
+echo "Fetching $CONSUMER_FORGEUSER repo list for Sync"
 
 if ./shTools/fetch_repos.sh; then
   echo "Fetch executed"
@@ -61,7 +61,7 @@ fi
  
 echo -e "\e[35m----------------------------------------\e[0m"
 #loading in repo list
-echo "starting Sync with $FORGEUSER"
+echo "starting Sync with $PRODUCER_FORGEUSER"
 mapfile -t repositories < <(python3 "$CURRENT_DIR/pyTools/json_array_to_lines.py" "$CURRENT_DIR/repo_names.json")
 
 for repo in "${repositories[@]}"; do
@@ -80,7 +80,7 @@ for repo in "${repositories[@]}"; do
  
  echo -e "\e[35m----------------------------------------\e[0m"
   echo "Attempting clone of $repo"
-  clone_url="https://x-access-token:${PRODUCER_DESTINATION_TOKEN}@${PRODUCER_DESTINATION_DOMAIN}/${FORGEUSER}/${repo_name}.git"
+  clone_url="https://x-access-token:${PRODUCER_DESTINATION_TOKEN}@${PRODUCER_DESTINATION_DOMAIN}/${PRODUCER_FORGEUSER}/${repo_name}.git"
   if git clone "$clone_url"; then
     echo "clone of $repo succeeded"
   else
@@ -107,7 +107,7 @@ for repo in "${repositories[@]}"; do
   echo "Pushing current branch: $(git branch --show-current)"
   echo "Attempting a push of $repo"
   
-  remote_url="https://${FORGEUSER}:${CONSUMER_DESTINATION_TOKEN}@${CONSUMER_DESTINATION_DOMAIN}/${FORGEUSER}/${repo_name}.git"
+  remote_url="https://${CONSUMER_FORGEUSER}:${CONSUMER_DESTINATION_TOKEN}@${CONSUMER_DESTINATION_DOMAIN}/${CONSUMER_FORGEUSER}/${repo_name}.git"
   #send every branch so prs can import
   while IFS= read -r branch; do
     #skipping origin
@@ -120,7 +120,7 @@ for repo in "${repositories[@]}"; do
   done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin)
 
   
-  consumer_repo_url="https://${CONSUMER_DESTINATION_DOMAIN}/${FORGEUSER}/${repo_name}"
+  consumer_repo_url="https://${CONSUMER_DESTINATION_DOMAIN}/${CONSUMER_FORGEUSER}/${repo_name}"
   dir=$(pwd)
   echo "$dir"
   echo "Attempting Sync $repo issues with $CONSUMER_DESTINATION_DOMAIN"

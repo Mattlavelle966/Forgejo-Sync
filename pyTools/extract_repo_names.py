@@ -4,7 +4,7 @@ import sys
 import json
 import os
 
-FORGEUSER= os.environ["FORGEUSER"]
+FORGEUSER= os.environ["PRODUCER_FORGEUSER"]
 
 if len(sys.argv) != 3:
     print("usage: extract_repo_names.py <input.json> <output.json>", file=sys.stderr)
