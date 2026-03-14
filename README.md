@@ -48,6 +48,7 @@ The script is fully automated, just wait for it to finish, depending on how larg
 
 - When meta-data is synced, the comments original contributors cant be maintained as there is no guarantee that the same user exists in the DB, so we insert a comment at the top of each synced comment with the original contributors Github username.
 - Comment date and time meta-data are lost during a repositories first sync, since all pushes go through your bearer token and all Pr's, Comments and Issues have to be created fresh, too stop this loss of data we insert text snippets that come from Githubs meta-data during the sync process. 
+- If a Pr's is opened on Github, and a sync is run, it will sync correctly, but after that Pr is closed on Github and another sync is run, the Pr will still be open in Forgejo, this is purley cosmetic the merge and code state will be synced correctly, the Pr will just remain open. 
 
 ### Planned Enhancements
 
