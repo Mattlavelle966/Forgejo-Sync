@@ -97,9 +97,9 @@ def sync_issue_comments(issue_number, producer_repo_url, consumer_repo_url, type
         comment_created_at = comment.get("created_at", "")
 
         import_body = (
-            "Original author: " + comment_user + "\n"
-            + "Original created at: " + comment_created_at + "\n\n"
-            + comment_body
+            f"> Original author: {comment_user}\n"
+            f"> Original created at: {comment_created_at}\n\n"
+            f"{comment_body}"
         )
 
         if import_body in existing_comment_bodies:

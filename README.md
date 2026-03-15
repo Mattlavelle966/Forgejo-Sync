@@ -1,105 +1,59 @@
-# Forgejo Repository Sync Script
+## Overview
 
-## Purpose
+This script automates the synchronization of GitHub repositories to a Forgejo server. It essentially creates an exact mirror of a specific Github users repositories, including every branch and all major pieces of meta-data(issues, Pr's, comments). The intended use case is so you can use Github as your primary remote suite and use Forgejo as a backup suite should you have an issue with Github like an account loss or ban of some kind. This way if you loose your account, as long as you have been regularly syncing your Github account, you will always have a backup of every repository, branch, pull, Issue and comment. Forgejo-Sync can simply be run whenever you want to back-up all of your users Github repositories.   
 
-This script clones repositories from an **export source** (where the data currently lives) and pushes them into an **import target** (where you want the repositories to end up).
+### Function
 
-It was written mainly to sync personal GitHub repositories into a Forgejo server.
+The script uses 2 bearer tokens and starts by fetching a users repository list, which generates a list of that users private and public repositories in JSON, it then clones them from GitHub into `./Sync`, constructs a Forgejo remote, and pushes each repository to the Forgejo server. Additionally, it syncs issues, pull requests, branches and all comments including comments under open and closed Pr's and issues.
 
-Concept:
+### Dependencies
 
-Export (source of data) -> Import (destination)
+- Bash
+- Git
+- Python
+- Bearer Tokens
 
-Example:
+### Configuration
 
-GitHub -> Forgejo
+Create a `config.sh` file with the following template, replacing the placeholder values with your actual credentials:
 
----
+```bash
+#!/usr/bin/env bash
 
-# Requirements
-
-You need:
-
-- `bash`
-- `git`
-- `jq`
-- SSH access configured for both remotes
-
-Install jq if needed:
-
-`sudo pacman -S jq`
-
-(or your distro equivalent)
-
----
-
-# Repository List Format
-
-The script expects a JSON array containing SSH repository URLs.
-
-Example repolist.json
+export PRODUCER_FORGEUSER="MattLavelle966"  # GitHub username or organization
+export CONSUMER_FORGEUSER="MattLavelle966"  # Forgejo username
+export CONSUMER_DESTINATION_TOKEN="your_consumer_token"  # Token for accessing Forgejo
+export CONSUMER_DESTINATION_DOMAIN="your_consumer_domain"  # Domain for Forgejo
+export PRODUCER_DESTINATION_TOKEN="your_producer_token"  # Token for accessing GitHub
+export PRODUCER_DESTINATION_DOMAIN="github.com"  # Domain for GitHub
 ```
-[
-  "git@github.com:Mattlavelle966/reponame",
-  "git@github.com:Mattlavelle966/reponame2",
-  "git@github.com:Mattlavelle966/reponame3"
-]
-```
-Notes:
 
-- Use SSH URLs
-- `.git` is optional suffix
+### Running the Script
 
----
+1. Ensure you have the necessary dependencies installed.
+2. Run the script:
 
-# Running the Script
-
-Run:
-
+```bash
 ./forgejo-push.sh
-
-The script will prompt for several values.
-
-Example input:
-
-```
-Enter Your username for the Forgejo: MattLavelle966  
-Enter in your Import target SSH-Key file (absolute): /home/matt/.ssh/forgejo_key  
-Enter in your Export target SSH-Key file (absolute): /home/matt/.ssh/id_ed25519  
-Enter the your JSON Array file path(absolute): /home/matt/repos/forgejo-automation/repolist.json
 ```
 
-Meaning:
+The script is fully automated, just wait for it to finish, depending on how large and how many repositories you have this can take a variable amount of time.
 
-Forgejo username = repository owner on the Forgejo server  
-Import key = SSH key used to push into Forgejo  
-Export key = SSH key used to clone from GitHub  
-JSON path = location of the repo list file  
+### Additional Notes
 
----
+- Python handles all Rest-API syncing (Pr's, Issues, Comments, User's repository list).
+- Bash handles the cloning of each repository, the pushing of each branch to the Forgejo's remote repository and the calling of each python tool for syncing meta-data. 
 
-# Temporary Working Directory
+### Known issues
 
-The script clones repositories into a working directory called:
+- When meta-data is synced, the comments original contributors cant be maintained as there is no guarantee that the same user exists in the DB, so we insert a comment at the top of each synced comment with the original contributors Github username.
+- Comment date and time meta-data are lost during a repositories first sync, since all pushes go through your bearer token and all Pr's, Comments and Issues have to be created fresh, too stop this loss of data we insert text snippets that come from Githubs meta-data during the sync process. 
+- If a Pr's is opened on Github, and a sync is run, it will sync correctly, but after that Pr is closed on Github and another sync is run, the Pr will still be open in Forgejo, this is purley cosmetic the merge and code state will be synced correctly, the Pr will just remain open. 
 
-`Sync/`
+### Planned Enhancements
 
-This directory is only used temporarily for cloning and pushing.
-
-After the script finishes, delete it:
-
-`rm -rf Sync`
-
-It is recommended to remove the Sync directory after each run so the next run starts clean.
-
----
-
-# Summary
-
-This script automates copying repositories from one git remote to another.
-
-Typical use case:
-
-GitHub (export) → Forgejo (import)
-
-It clones repositories from the export source, adds a Forgejo remote, and pushes them to the import destination.
+- Optimize syncing:
+  - before syncing a repository, call the Forgejo Rest-API to see if that repository is already synced,  
+- More Meta-data
+  - Tag Meta-data
+  -  Markdown formatting for synced Comments, Pr's and Issues 
